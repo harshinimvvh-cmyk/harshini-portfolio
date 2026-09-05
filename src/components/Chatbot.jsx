@@ -4,6 +4,7 @@ import { MessageCircle, X, Send } from 'lucide-react';
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const [messages, setMessages] = useState([
     {
@@ -12,22 +13,59 @@ export default function Chatbot() {
     },
   ]);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = async () => {
+    if (!message.trim() || isLoading) return;
+
+    const userMessage = message.trim();
 
     setMessages((prev) => [
       ...prev,
       {
         sender: 'user',
-        text: message,
-      },
-      {
-        sender: 'bot',
-        text: "Thanks for your question! 🤖 I'm currently being connected to my AI backend. Soon I'll be able to answer questions about Harshini.",
+        text: userMessage,
       },
     ]);
 
     setMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: data.reply,
+        },
+      ]);
+    } catch (error) {
+      console.error('Chatbot Error:', error);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: 'Sorry 😔 I could not get a response right now. Please try again later.',
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -98,6 +136,15 @@ export default function Chatbot() {
               </div>
             ))}
 
+            {/* Loading message */}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] px-3 py-2 rounded-2xl rounded-bl-md text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                  Thinking... 🤖
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Input */}
@@ -110,12 +157,14 @@ export default function Chatbot() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me something..."
-                className="flex-1 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-cyan-500"
+                disabled={isLoading}
+                className="flex-1 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60"
               />
 
               <button
                 onClick={handleSend}
-                className="p-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white transition-colors"
+                disabled={isLoading}
+                className="p-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50"
                 aria-label="Send message"
               >
                 <Send className="w-4 h-4" />
