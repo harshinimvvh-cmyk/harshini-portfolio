@@ -11,6 +11,7 @@ import Leadership from './components/Leadership';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ResumeModal from './components/ResumeModal';
+import Chatbot from './components/Chatbot';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -80,6 +81,7 @@ export default function App() {
         isOpen={resumeModalOpen} 
         onClose={() => setResumeModalOpen(false)} 
       />
+      <Chatbot />
 
     </div>
   );
