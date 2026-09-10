@@ -1,6 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,14 +20,10 @@ export default async function handler(req, res) {
       });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.6-flash",
-    });
-
     const prompt = `
 You are Harshini's personal portfolio AI assistant.
 
-Answer questions about Harshini based only on the following information:
+Answer questions about Harshini based ONLY on the information below.
 
 Name: Harshini M
 Field: B.Sc. Computer Science (Artificial Intelligence & Data Science)
@@ -40,7 +38,6 @@ Projects:
 - Personal Portfolio Website
 
 Experience:
-- AWS Cloud Computing Internship at OneData Solutions
 - Python and SQL internship at Brainery Spot Technology
 - Data Analytics internship at Techvolt Software Pvt Ltd
 
@@ -55,19 +52,21 @@ Certifications:
 Instructions:
 - Be friendly and professional.
 - Give concise but useful answers.
+- Answer questions about Harshini's portfolio.
 - If asked something unrelated to Harshini, politely say you are designed to answer questions about Harshini's portfolio.
-- Never invent qualifications or experience.
+- Never invent qualifications, experience, projects, or skills.
 
 Visitor's question:
 ${message}
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt,
+    });
 
     return res.status(200).json({
-      reply: text,
+      reply: response.text,
     });
   } catch (error) {
     console.error("Gemini API Error:", error);
